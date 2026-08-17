@@ -8,7 +8,6 @@ class Solution {
 
         int[][] dp = new int[n][n];
 
-        // len is the length of the subarray
         for (int len = 2; len <= n; len++) {
             for (int i = 0; i <= n - len; i++) {
                 int j = i + len - 1;
@@ -31,6 +30,7 @@ class Solution {
             }
         }
 
+        // Return must be outside the loops, directly inside the method body
         return dp[0][n - 1];
     }
 }
