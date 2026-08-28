@@ -1,0 +1,114 @@
+class Solution {
+
+    public String lexPalindromicPermutation(String s, String target) {
+        int n = s.length();
+        int[] count = new int[26];
+        for (char c : s.toCharArray()) {
+            count[c - 'a']++;
+        }
+
+        int odd = 0;
+        int middle = -1;
+        for (int c = 0; c < 26; c++) {
+            if ((count[c] & 1) == 1) {
+                odd++;
+                middle = c;
+            }
+        }
+
+        if (odd > 1) {
+            return "";
+        }
+
+        if ((n & 1) == 1) {
+            count[middle]--;
+        }
+
+        int half = n / 2;
+        int[] pairs = new int[26];
+        for (int c = 0; c < 26; c++) {
+            pairs[c] = count[c] / 2;
+        }
+
+        char[] left = new char[half];
+        int matched = 0;
+
+        // Step 1: Match target prefix as far as possible
+        for (int i = 0; i < half; i++) {
+            int c = target.charAt(i) - 'a';
+            if (pairs[c] == 0) {
+                break;
+            }
+            pairs[c]--;
+            left[i] = target.charAt(i);
+            matched++;
+        }
+
+        // Step 2: Check if exact match of the first 'half' characters works
+        if (matched == half) {
+            String candidate = makePalindrome(left, middle, n);
+            if (candidate.compareTo(target) > 0) {
+                return candidate;
+            }
+        }
+
+        // Step 3: Backtrack from 'matched' down to 0
+        for (int i = matched; i >= 0; i--) {
+            if (i < matched) {
+                // Return character at left[i] back to pool
+                pairs[left[i] - 'a']++;
+            }
+
+            if (i == half) {
+                continue;
+            }
+
+            int targetChar = target.charAt(i) - 'a';
+
+            // Pick the smallest available character strictly greater than target[i]
+            for (int next = targetChar + 1; next < 26; next++) {
+                if (pairs[next] == 0) {
+                    continue;
+                }
+
+                // Choose 'next'
+                pairs[next]--;
+                char[] newLeft = new char[half];
+
+                // Copy prefix
+                for (int j = 0; j < i; j++) {
+                    newLeft[j] = left[j];
+                }
+                newLeft[i] = (char) ('a' + next);
+
+                // Fill the rest with lexicographically smallest available pairs
+                int pos = i + 1;
+                for (int c = 0; c < 26; c++) {
+                    int cnt = pairs[c];
+                    while (cnt > 0) {
+                        newLeft[pos++] = (char) ('a' + c);
+                        cnt--;
+                    }
+                }
+
+                return makePalindrome(newLeft, middle, n);
+            }
+        }
+
+        return "";
+    }
+
+    private String makePalindrome(char[] left, int middle, int n) {
+        StringBuilder result = new StringBuilder(n);
+        for (char c : left) {
+            result.append(c);
+        }
+        if ((n & 1) == 1) {
+            result.append((char) ('a' + middle));
+        }
+        for (int i = left.length - 1; i >= 0; i--) {
+            result.append(left[i]);
+        }
+        return result.toString();
+    }
+}
