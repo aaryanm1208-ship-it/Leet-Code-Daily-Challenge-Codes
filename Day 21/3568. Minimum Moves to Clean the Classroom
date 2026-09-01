@@ -1,0 +1,165 @@
+import java.util.*;
+
+class Solution {
+
+    static class State {
+        int r, c;
+        int mask;
+        int energy;
+
+        State(int r, int c, int mask, int energy) {
+            this.r = r;
+            this.c = c;
+            this.mask = mask;
+            this.energy = energy;
+        }
+    }
+
+    public int minMoves(String[] classroom, int energy) {
+
+        int m = classroom.length;
+        int n = classroom[0].length();
+
+        int startR = -1;
+        int startC = -1;
+
+        int[][] litterId = new int[m][n];
+
+        for (int[] row : litterId) {
+            Arrays.fill(row, -1);
+        }
+
+        int litterCount = 0;
+
+        // Find starting position and number every litter
+        for (int r = 0; r < m; r++) {
+            for (int c = 0; c < n; c++) {
+
+                char ch = classroom[r].charAt(c);
+
+                if (ch == 'S') {
+                    startR = r;
+                    startC = c;
+                }
+
+                if (ch == 'L') {
+                    litterId[r][c] = litterCount++;
+                }
+            }
+        }
+
+        // No litter
+        if (litterCount == 0) {
+            return 0;
+        }
+
+        int targetMask = (1 << litterCount) - 1;
+
+        /*
+         * best[r][c][mask] = maximum energy with which
+         * we have reached this state.
+         */
+        int[][][] best = new int[m][n][1 << litterCount];
+
+        for (int r = 0; r < m; r++) {
+            for (int c = 0; c < n; c++) {
+                Arrays.fill(best[r][c], -1);
+            }
+        }
+
+        Queue<State> queue = new ArrayDeque<>();
+
+        best[startR][startC][0] = energy;
+
+        queue.offer(
+            new State(startR, startC, 0, energy)
+        );
+
+        int[] dr = {-1, 1, 0, 0};
+        int[] dc = {0, 0, -1, 1};
+
+        int moves = 0;
+
+        while (!queue.isEmpty()) {
+
+            int size = queue.size();
+
+            while (size-- > 0) {
+
+                State cur = queue.poll();
+
+                int r = cur.r;
+                int c = cur.c;
+                int mask = cur.mask;
+                int remainingEnergy = cur.energy;
+
+                // All litter collected
+                if (mask == targetMask) {
+                    return moves;
+                }
+
+                // Cannot make another move
+                if (remainingEnergy == 0) {
+                    continue;
+                }
+
+                for (int d = 0; d < 4; d++) {
+
+                    int nr = r + dr[d];
+                    int nc = c + dc[d];
+
+                    // Outside grid
+                    if (nr < 0 || nr >= m ||
+                        nc < 0 || nc >= n) {
+                        continue;
+                    }
+
+                    // Obstacle
+                    if (classroom[nr].charAt(nc) == 'X') {
+                        continue;
+                    }
+
+                    int newEnergy = remainingEnergy - 1;
+                    int newMask = mask;
+
+                    char cell = classroom[nr].charAt(nc);
+
+                    // Collect litter
+                    if (cell == 'L') {
+                        int id = litterId[nr][nc];
+                        newMask |= (1 << id);
+                    }
+
+                    // Reset energy
+                    if (cell == 'R') {
+                        newEnergy = energy;
+                    }
+
+                    /*
+                     * If we have already reached this exact
+                     * position + litter-mask with equal or
+                     * greater energy, this state is useless.
+                     */
+                    if (newEnergy <= best[nr][nc][newMask]) {
+                        continue;
+                    }
+
+                    best[nr][nc][newMask] = newEnergy;
+
+                    queue.offer(
+                        new State(
+                            nr,
+                            nc,
+                            newMask,
+                            newEnergy
+                        )
+                    );
+                }
+            }
+
+            moves++;
+        }
+
+        return -1;
+    }
+}
