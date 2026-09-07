@@ -1,0 +1,30 @@
+class Solution {
+    public int distinctSubseqII(String s) {
+        int MOD = 1000000007;
+
+        // dp[i] = number of distinct subsequences using first i characters,
+        // including the empty subsequence.
+        long[] dp = new long[s.length() + 1];
+        dp[0] = 1;
+
+        // last[c] = dp value before the previous occurrence of character c
+        long[] last = new long[26];
+
+        for (int i = 1; i <= s.length(); i++) {
+            char ch = s.charAt(i - 1);
+            int c = ch - 'a';
+
+            // Every existing subsequence can either take or skip ch.
+            dp[i] = (2 * dp[i - 1]) % MOD;
+
+            // Remove duplicates created by the previous occurrence of ch.
+            dp[i] = (dp[i] - last[c] + MOD) % MOD;
+
+            // For the next occurrence, this is the value that must be removed.
+            last[c] = dp[i - 1];
+        }
+
+        // Remove the empty subsequence.
+        return (int) ((dp[s.length()] - 1 + MOD) % MOD);
+    }
+}
