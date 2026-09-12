@@ -1,0 +1,147 @@
+import java.util.*;
+
+class Solution {
+
+    static class State {
+        long score;
+        ArrayList<Integer> ids;
+
+        State() {
+            score = 0;
+            ids = new ArrayList<>();
+        }
+
+        State(long score, ArrayList<Integer> ids) {
+            this.score = score;
+            this.ids = ids;
+        }
+    }
+
+    public List<Integer> maximumWeight(int[][] intervals) {
+        int n = intervals.length;
+
+        // [left, right, weight, originalIndex]
+        long[][] a = new long[n][4];
+
+        for (int i = 0; i < n; i++) {
+            a[i][0] = intervals[i][0];
+            a[i][1] = intervals[i][1];
+            a[i][2] = intervals[i][2];
+            a[i][3] = i;
+        }
+
+        // Sort by right endpoint
+        Arrays.sort(a, (x, y) -> {
+            if (x[1] != y[1])
+                return Long.compare(x[1], y[1]);
+
+            return Long.compare(x[0], y[0]);
+        });
+
+        /*
+         * prev[i] = number of intervals before i whose
+         * right endpoint is STRICTLY smaller than a[i].left.
+         */
+        int[] prev = new int[n];
+
+        for (int i = 0; i < n; i++) {
+            long left = a[i][0];
+
+            int lo = 0;
+            int hi = i;
+
+            while (lo < hi) {
+                int mid = lo + (hi - lo) / 2;
+
+                if (a[mid][1] < left)
+                    lo = mid + 1;
+                else
+                    hi = mid;
+            }
+
+            prev[i] = lo;
+        }
+
+        /*
+         * dp[k][i] = best answer using the first i intervals
+         * while selecting at most k intervals.
+         */
+        State[][] dp = new State[5][n + 1];
+
+        for (int k = 0; k <= 4; k++) {
+            for (int i = 0; i <= n; i++) {
+                dp[k][i] = new State();
+            }
+        }
+
+        for (int i = 1; i <= n; i++) {
+
+            int idx = i - 1;
+
+            for (int k = 0; k <= 4; k++) {
+
+                // Option 1: don't take this interval
+                State best = dp[k][i - 1];
+
+                // Option 2: take this interval
+                if (k > 0) {
+
+                    State previous = dp[k - 1][prev[idx]];
+
+                    ArrayList<Integer> ids =
+                            new ArrayList<>(previous.ids);
+
+                    int originalIndex = (int) a[idx][3];
+
+                    // Keep indices sorted for lexicographical comparison
+                    int pos = Collections.binarySearch(
+                            ids, originalIndex
+                    );
+
+                    if (pos < 0)
+                        pos = -pos - 1;
+
+                    ids.add(pos, originalIndex);
+
+                    State take = new State(
+                            previous.score + a[idx][2],
+                            ids
+                    );
+
+                    if (better(take, best)) {
+                        best = take;
+                    }
+                }
+
+                dp[k][i] = best;
+            }
+        }
+
+        return dp[4][n].ids;
+    }
+
+    /*
+     * Return true if x is better than y.
+     *
+     * Higher score is better.
+     * If scores are equal, lexicographically smaller
+     * index array is better.
+     */
+    private boolean better(State x, State y) {
+
+        if (x.score != y.score)
+            return x.score > y.score;
+
+        int size = Math.min(x.ids.size(), y.ids.size());
+
+        for (int i = 0; i < size; i++) {
+            if (!x.ids.get(i).equals(y.ids.get(i))) {
+                return x.ids.get(i) < y.ids.get(i);
+            }
+        }
+
+        // If one is a prefix of the other,
+        // the shorter array is lexicographically smaller.
+        return x.ids.size() < y.ids.size();
+    }
+}
