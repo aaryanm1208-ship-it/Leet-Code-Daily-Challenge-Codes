@@ -1,0 +1,45 @@
+class Solution {
+    public int largestOverlap(int[][] img1, int[][] img2) {
+        int n = img1.length;
+        
+        // Count total 1s to size the coordinate arrays
+        int[] r1 = new int[n * n], c1 = new int[n * n];
+        int[] r2 = new int[n * n], c2 = new int[n * n];
+        int size1 = 0, size2 = 0;
+
+        for (int r = 0; r < n; r++) {
+            for (int c = 0; c < n; c++) {
+                if (img1[r][c] == 1) {
+                    r1[size1] = r;
+                    c1[size1] = c;
+                    size1++;
+                }
+                if (img2[r][c] == 1) {
+                    r2[size2] = r;
+                    c2[size2] = c;
+                    size2++;
+                }
+            }
+        }
+
+        // dr and dc range from -(n - 1) to (n - 1).
+        // Max range is 2 * n - 1. With n <= 30, size 60 is plenty.
+        // Adding an offset of n maps [-n, n] to non-negative indices.
+        int[][] count = new int[2 * n + 1][2 * n + 1];
+        int maxOverlap = 0;
+
+        for (int i = 0; i < size1; i++) {
+            for (int j = 0; j < size2; j++) {
+                int dr = r2[j] - r1[i] + n;
+                int dc = c2[j] - c1[i] + n;
+                
+                count[dr][dc]++;
+                if (count[dr][dc] > maxOverlap) {
+                    maxOverlap = count[dr][dc];
+                }
+            }
+        }
+
+        return maxOverlap;
+    }
+}
