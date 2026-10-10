@@ -1,0 +1,55 @@
+class Solution {
+    public long minSumSquareDiff(int[] nums1, int[] nums2, int k1, int k2) {
+        int n = nums1.length;
+        long k = (long) k1 + k2;
+        
+        int[] diffs = new int[n];
+        int maxD = 0;
+        long totalDiff = 0;
+        
+        for (int i = 0; i < n; i++) {
+            diffs[i] = Math.abs(nums1[i] - nums2[i]);
+            maxD = Math.max(maxD, diffs[i]);
+            totalDiff += diffs[i];
+        }
+        
+        // If total operations can reduce all differences to 0
+        if (k >= totalDiff) {
+            return 0;
+        }
+        
+        int[] count = new int[maxD + 1];
+        for (int d : diffs) {
+            count[d]++;
+        }
+        
+        // Decrement differences starting from the largest
+        for (int v = maxD; v > 0; v--) {
+            if (count[v] == 0) {
+                continue;
+            }
+            
+            if (k >= count[v]) {
+                k -= count[v];
+                count[v - 1] += count[v];
+                count[v] = 0;
+            } else {
+                // Reduce k elements down to v - 1
+                count[v - 1] += (int) k;
+                count[v] -= (int) k;
+                k = 0;
+                break;
+            }
+        }
+        
+        // Compute final sum of squared differences using long to prevent overflow
+        long result = 0;
+        for (int v = 1; v <= maxD; v++) {
+            if (count[v] > 0) {
+                result += (long) v * v * count[v];
+            }
+        }
+        
+        return result;
+    }
+}
