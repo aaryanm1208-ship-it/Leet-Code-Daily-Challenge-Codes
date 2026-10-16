@@ -1,0 +1,83 @@
+import java.util.HashMap;
+import java.util.Map;
+
+class Solution {
+    private static final int MOD = 1_000_000_007;
+
+    private long[] treeSum;
+    private long[] treeSq;
+    private long[] lazy;
+
+    private void push(int node, int l, int r) {
+        if (lazy[node] != 0) {
+            long lz = lazy[node];
+            int mid = (l + r) >> 1;
+
+            int left = 2 * node;
+            long lenL = mid - l + 1;
+            treeSq[left] = (treeSq[left] + 2 * lz % MOD * treeSum[left] % MOD + lz * lz % MOD * lenL % MOD) % MOD;
+            treeSum[left] = (treeSum[left] + lz * lenL) % MOD;
+            lazy[left] = (lazy[left] + lz) % MOD;
+
+            int right = 2 * node + 1;
+            long lenR = r - mid;
+            treeSq[right] = (treeSq[right] + 2 * lz % MOD * treeSum[right] % MOD + lz * lz % MOD * lenR % MOD) % MOD;
+            treeSum[right] = (treeSum[right] + lz * lenR) % MOD;
+            lazy[right] = (lazy[right] + lz) % MOD;
+
+            lazy[node] = 0;
+        }
+    }
+
+    private void update(int node, int l, int r, int ql, int qr, long val) {
+        if (ql <= l && r <= qr) {
+            long len = r - l + 1;
+            treeSq[node] = (treeSq[node] + 2 * val % MOD * treeSum[node] % MOD + val * val % MOD * len % MOD) % MOD;
+            treeSum[node] = (treeSum[node] + val * len) % MOD;
+            lazy[node] = (lazy[node] + val) % MOD;
+            return;
+        }
+
+        push(node, l, r);
+        int mid = (l + r) >> 1;
+        int left = 2 * node;
+        int right = 2 * node + 1;
+
+        if (ql <= mid) {
+            update(left, l, mid, ql, qr, val);
+        }
+        if (qr > mid) {
+            update(right, mid + 1, r, ql, qr, val);
+        }
+
+        treeSum[node] = (treeSum[left] + treeSum[right]) % MOD;
+        treeSq[node] = (treeSq[left] + treeSq[right]) % MOD;
+    }
+
+    public int sumCounts(int[] nums) {
+        int n = nums.length;
+
+        // Allocate segment tree buffers (4 * n is sufficient)
+        treeSum = new long[4 * n];
+        treeSq = new long[4 * n];
+        lazy = new long[4 * n];
+
+        // Maps element value -> previous 0-indexed position
+        Map<Integer, Integer> lastPos = new HashMap<>();
+        long totalAns = 0;
+
+        for (int j = 0; j < n; j++) {
+            int val = nums[j];
+            int prevIdx = lastPos.getOrDefault(val, -1);
+
+            // Add +1 to d(i, j) for all starting points i in [prevIdx + 1, j]
+            update(1, 0, n - 1, prevIdx + 1, j, 1);
+            lastPos.put(val, j);
+
+            // treeSq[1] represents sum_{i=0}^j d(i, j)^2
+            totalAns = (totalAns + treeSq[1]) % MOD;
+        }
+
+        return (int) totalAns;
+    }
+}
