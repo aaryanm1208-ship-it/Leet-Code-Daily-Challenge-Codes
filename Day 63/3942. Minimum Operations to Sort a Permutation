@@ -1,0 +1,53 @@
+class Solution {
+    public int minOperations(int[] nums) {
+        int n = nums.length;
+        if (n <= 1) {
+            return 0;
+        }
+
+        // Find index of 0
+        int idx = -1;
+        for (int i = 0; i < n; i++) {
+            if (nums[i] == 0) {
+                idx = i;
+                break;
+            }
+        }
+
+        // Check if nums is a cyclic shift of [0, 1, ..., n - 1] (ascending)
+        boolean isAsc = true;
+        for (int k = 0; k < n; k++) {
+            if (nums[(idx + k) % n] != k) {
+                isAsc = false;
+                break;
+            }
+        }
+
+        // Check if nums is a cyclic shift of [n - 1, n - 2, ..., 0] (descending)
+        boolean isDesc = true;
+        for (int k = 0; k < n; k++) {
+            if (nums[(idx - k + n) % n] != k) {
+                isDesc = false;
+                break;
+            }
+        }
+
+        if (!isAsc && !isDesc) {
+            return -1;
+        }
+
+        int ans = Integer.MAX_VALUE;
+
+        if (isAsc) {
+            ans = Math.min(ans, idx);
+        }
+
+        if (isDesc) {
+            int cost1 = ((idx + 1) % n) + 1;  // Rotate left, then reverse
+            int cost2 = 1 + (n - 1 - idx);     // Reverse, then rotate left
+            ans = Math.min(ans, Math.min(cost1, cost2));
+        }
+
+        return ans;
+    }
+}
