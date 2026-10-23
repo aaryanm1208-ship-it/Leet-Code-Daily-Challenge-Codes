@@ -1,0 +1,18 @@
+class Solution {
+    public int sortPermutation(int[] nums) {
+        int ans = -1; // -1 represents that no misplaced element has been found yet
+        
+        for (int i = 0; i < nums.length; i++) {
+            if (nums[i] != i) {
+                if (ans == -1) {
+                    ans = nums[i];
+                } else {
+                    ans &= nums[i];
+                }
+            }
+        }
+        
+        // If ans is still -1, the array was already sorted
+        return ans == -1 ? 0 : ans;
+    }
+}
