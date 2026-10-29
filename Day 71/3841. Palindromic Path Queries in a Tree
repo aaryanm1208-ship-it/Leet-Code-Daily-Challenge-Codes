@@ -1,0 +1,166 @@
+import java.util.*;
+
+public class Solution {
+    private List<Integer>[] adj;
+    private int[][] up;
+    private int[] depth;
+    private int[] tin;
+    private int[] tout;
+    private int timer;
+    private int LOG;
+    private int[] initialXor;
+    private FenwickTree bit;
+
+    static class FenwickTree {
+        int n;
+        int[] tree;
+
+        FenwickTree(int n) {
+            this.n = n;
+            this.tree = new int[n + 2];
+        }
+
+        void update(int idx, int val) {
+            for (; idx <= n; idx += idx & -idx) {
+                tree[idx] ^= val;
+            }
+        }
+
+        int query(int idx) {
+            int sum = 0;
+            for (; idx > 0; idx -= idx & -idx) {
+                sum ^= tree[idx];
+            }
+            return sum;
+        }
+    }
+
+    public List<Boolean> palindromePath(int n, int[][] edges, String s, String[] queries) {
+        adj = new ArrayList[n];
+        for (int i = 0; i < n; i++) {
+            adj[i] = new ArrayList<>();
+        }
+        for (int[] edge : edges) {
+            adj[edge[0]].add(edge[1]);
+            adj[edge[1]].add(edge[0]);
+        }
+
+        LOG = 1;
+        while ((1 << LOG) <= n) {
+            LOG++;
+        }
+
+        up = new int[n][LOG];
+        depth = new int[n];
+        tin = new int[n];
+        tout = new int[n];
+        initialXor = new int[n];
+        timer = 0;
+
+        char[] sChars = s.toCharArray();
+
+        // Iterative DFS to avoid stack overflow
+        int[] parent = new int[n];
+        int[] childPtr = new int[n];
+        int[] stack = new int[n];
+        int stackTop = 0;
+
+        stack[0] = 0;
+        parent[0] = 0;
+        depth[0] = 0;
+        initialXor[0] = 1 << (sChars[0] - 'a');
+        timer = 1;
+        tin[0] = timer;
+
+        for (int j = 0; j < LOG; j++) {
+            up[0][j] = 0;
+        }
+
+        while (stackTop >= 0) {
+            int u = stack[stackTop];
+
+            if (childPtr[u] == 0) {
+                for (int j = 1; j < LOG; j++) {
+                    up[u][j] = up[up[u][j - 1]][j - 1];
+                }
+            }
+
+            if (childPtr[u] < adj[u].size()) {
+                int v = adj[u].get(childPtr[u]++);
+                if (v != parent[u]) {
+                    parent[v] = u;
+                    depth[v] = depth[u] + 1;
+                    up[v][0] = u;
+                    initialXor[v] = initialXor[u] ^ (1 << (sChars[v] - 'a'));
+                    tin[v] = ++timer;
+                    stackTop++;
+                    stack[stackTop] = v;
+                }
+            } else {
+                tout[u] = timer;
+                stackTop--;
+            }
+        }
+
+        bit = new FenwickTree(timer + 2);
+
+        List<Boolean> results = new ArrayList<>();
+
+        for (String q : queries) {
+            String[] parts = q.split(" ");
+            if (parts[0].equals("update")) {
+                int u = Integer.parseInt(parts[1]);
+                char newC = parts[2].charAt(0);
+                char oldC = sChars[u];
+
+                if (oldC != newC) {
+                    int delta = (1 << (oldC - 'a')) ^ (1 << (newC - 'a'));
+                    bit.update(tin[u], delta);
+                    bit.update(tout[u] + 1, delta);
+                    sChars[u] = newC;
+                }
+            } else {
+                int u = Integer.parseInt(parts[1]);
+                int v = Integer.parseInt(parts[2]);
+                int lcaNode = getLca(u, v);
+
+                int maskU = initialXor[u] ^ bit.query(tin[u]);
+                int maskV = initialXor[v] ^ bit.query(tin[v]);
+                int lcaCharMask = 1 << (sChars[lcaNode] - 'a');
+
+                int pathMask = maskU ^ maskV ^ lcaCharMask;
+
+                // At most one bit set check
+                results.add((pathMask & (pathMask - 1)) == 0);
+            }
+        }
+
+        return results;
+    }
+
+    private int getLca(int u, int v) {
+        if (depth[u] < depth[v]) {
+            int tmp = u;
+            u = v;
+            v = tmp;
+        }
+
+        int diff = depth[u] - depth[v];
+        for (int i = 0; i < LOG; i++) {
+            if (((diff >> i) & 1) == 1) {
+                u = up[u][i];
+            }
+        }
+
+        if (u == v) return u;
+
+        for (int i = LOG - 1; i >= 0; i--) {
+            if (up[u][i] != up[v][i]) {
+                u = up[u][i];
+                v = up[v][i];
+            }
+        }
+
+        return up[u][0];
+    }
+}
