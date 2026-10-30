@@ -1,0 +1,95 @@
+import java.util.*;
+
+public class Solution {
+
+    static class Edge {
+        int to;
+        int weight;
+
+        Edge(int to, int weight) {
+            this.to = to;
+            this.weight = weight;
+        }
+    }
+
+    static class State implements Comparable<State> {
+        int u;
+        int count;
+        int dist;
+
+        State(int u, int count, int dist) {
+            this.u = u;
+            this.count = count;
+            this.dist = dist;
+        }
+
+        @Override
+        public int compareTo(State other) {
+            return Integer.compare(this.dist, other.dist);
+        }
+    }
+
+    public int shortestPath(int n, int[][] edges, String labels, int k) {
+        if (n == 1) {
+            return 0;
+        }
+
+        // 1. Build adjacency list
+        List<List<Edge>> adj = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            adj.add(new ArrayList<>());
+        }
+        for (int[] edge : edges) {
+            adj.get(edge[0]).add(new Edge(edge[1], edge[2]));
+        }
+
+        // 2. Flattened distance array: dist[u * (k + 1) + c]
+        int totalStates = n * (k + 1);
+        int[] dist = new int[totalStates];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+
+        PriorityQueue<State> pq = new PriorityQueue<>();
+
+        // Start at node 0 with consecutive count = 1
+        int startIdx = 0 * (k + 1) + 1;
+        dist[startIdx] = 0;
+        pq.offer(new State(0, 1, 0));
+
+        char[] labelChars = labels.toCharArray();
+
+        // 3. Dijkstra's search
+        while (!pq.isEmpty()) {
+            State curr = pq.poll();
+            int u = curr.u;
+            int c = curr.count;
+            int d = curr.dist;
+
+            int stateIdx = u * (k + 1) + c;
+            if (d > dist[stateIdx]) {
+                continue;
+            }
+
+            if (u == n - 1) {
+                return d;
+            }
+
+            char currChar = labelChars[u];
+
+            for (Edge edge : adj.get(u)) {
+                int v = edge.to;
+                int w = edge.weight;
+                int nextC = (labelChars[v] == currChar) ? (c + 1) : 1;
+
+                if (nextC <= k) {
+                    int nextIdx = v * (k + 1) + nextC;
+                    if (d + w < dist[nextIdx]) {
+                        dist[nextIdx] = d + w;
+                        pq.offer(new State(v, nextC, d + w));
+                    }
+                }
+            }
+        }
+
+        return -1;
+    }
+}
