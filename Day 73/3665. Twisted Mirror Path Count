@@ -1,0 +1,80 @@
+import java.util.Arrays;
+
+public class Solution {
+    private static final int MOD = 1_000_000_007;
+    private static final int RIGHT = 0;
+    private static final int DOWN = 1;
+
+    private int[][][] memo;
+    private int m, n;
+    private int[][] grid;
+
+    // Renamed from uniquePathsWithMirrors to uniquePaths to match the driver
+    public int uniquePaths(int[][] grid) {
+        this.grid = grid;
+        this.m = grid.length;
+        this.n = grid[0].length;
+
+        this.memo = new int[m][n][2];
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                Arrays.fill(memo[i][j], -2);
+            }
+        }
+
+        int[][] dp = new int[m][n];
+        dp[0][0] = 1;
+
+        for (int r = 0; r < m; r++) {
+            for (int c = 0; c < n; c++) {
+                if (dp[r][c] == 0 || grid[r][c] == 1) {
+                    continue;
+                }
+
+                int currentPaths = dp[r][c];
+
+                // 1. Try moving Right to (r, c + 1)
+                int rightDest = resolve(r, c + 1, RIGHT);
+                if (rightDest != -1) {
+                    int destR = rightDest / n;
+                    int destC = rightDest % n;
+                    dp[destR][destC] = (dp[destR][destC] + currentPaths) % MOD;
+                }
+
+                // 2. Try moving Down to (r + 1, c)
+                int downDest = resolve(r + 1, c, DOWN);
+                if (downDest != -1) {
+                    int destR = downDest / n;
+                    int destC = downDest % n;
+                    dp[destR][destC] = (dp[destR][destC] + currentPaths) % MOD;
+                }
+            }
+        }
+
+        return dp[m - 1][n - 1];
+    }
+
+    private int resolve(int r, int c, int dir) {
+        if (r < 0 || r >= m || c < 0 || c >= n) {
+            return -1;
+        }
+
+        if (grid[r][c] == 0) {
+            return r * n + c;
+        }
+
+        if (memo[r][c][dir] != -2) {
+            return memo[r][c][dir];
+        }
+
+        int result;
+        if (dir == RIGHT) {
+            result = resolve(r + 1, c, DOWN);
+        } else {
+            result = resolve(r, c + 1, RIGHT);
+        }
+
+        memo[r][c][dir] = result;
+        return result;
+    }
+}
