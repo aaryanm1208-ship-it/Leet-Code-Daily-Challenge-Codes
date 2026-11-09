@@ -1,0 +1,58 @@
+import java.util.*;
+
+class Solution {
+    public List<Integer> busiestServers(int k, int[] arrival, int[] load) {
+        int[] count = new int[k];
+        
+        // Min-heap to track busy servers: [finishTime, serverId]
+        PriorityQueue<int[]> busy = new PriorityQueue<>(Comparator.comparingInt(a -> a[0]));
+        
+        // TreeSet to maintain currently available server IDs
+        TreeSet<Integer> available = new TreeSet<>();
+        for (int i = 0; i < k; i++) {
+            available.add(i);
+        }
+        
+        int maxRequests = 0;
+        int n = arrival.length;
+        
+        for (int i = 0; i < n; i++) {
+            int curArrival = arrival[i];
+            int curLoad = load[i];
+            
+            // Release all servers that have finished before or at current arrival time
+            while (!busy.isEmpty() && busy.peek()[0] <= curArrival) {
+                available.add(busy.poll()[1]);
+            }
+            
+            // If all servers are busy, drop the request
+            if (available.isEmpty()) {
+                continue;
+            }
+            
+            // Find the server with index >= (i % k)
+            Integer serverId = available.ceiling(i % k);
+            
+            // Wrap around to the first available server if none >= (i % k)
+            if (serverId == null) {
+                serverId = available.first();
+            }
+            
+            // Assign request to this server
+            available.remove(serverId);
+            busy.offer(new int[]{curArrival + curLoad, serverId});
+            count[serverId]++;
+            maxRequests = Math.max(maxRequests, count[serverId]);
+        }
+        
+        // Collect all servers that handled maxRequests
+        List<Integer> result = new ArrayList<>();
+        for (int i = 0; i < k; i++) {
+            if (count[i] == maxRequests) {
+                result.add(i);
+            }
+        }
+        
+        return result;
+    }
+}
