@@ -1,0 +1,40 @@
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+class Solution {
+    public long countNonDecreasingSubarrays(int[] nums, int k) {
+        int n = nums.length;
+        long ans = 0;
+        long cost = 0;
+        int r = n - 1;
+        
+        // Monotonic decreasing deque storing indices of prefix maximums from l to r
+        Deque<Integer> dq = new ArrayDeque<>();
+        
+        for (int l = n - 1; l >= 0; l--) {
+            // 1. Add nums[l] to the front of the window and update dominated prefix maxes
+            while (!dq.isEmpty() && nums[dq.peekFirst()] <= nums[l]) {
+                int idx = dq.pollFirst();
+                int nextIdx = dq.isEmpty() ? r + 1 : dq.peekFirst();
+                long len = nextIdx - idx;
+                cost += (long) (nums[l] - nums[idx]) * len;
+            }
+            dq.offerFirst(l);
+            
+            // 2. Shrink from the right until cost <= k
+            while (cost > k) {
+                int maxIdx = dq.peekLast();
+                cost -= (long) (nums[maxIdx] - nums[r]);
+                if (maxIdx == r) {
+                    dq.pollLast();
+                }
+                r--;
+            }
+            
+            // 3. Every subarray nums[l..j] with l <= j <= r is valid
+            ans += (r - l + 1);
+        }
+        
+        return ans;
+    }
+}
