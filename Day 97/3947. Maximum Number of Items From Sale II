@@ -1,0 +1,46 @@
+import java.util.*;
+
+class Solution {
+    public int maximumSaleItems(int[][] items, int budget) {
+        int n = items.length;
+        int[] freq = new int[n + 1];
+        long minPrice = Long.MAX_VALUE;
+        
+        for (int[] item : items) {
+            freq[item[0]]++;
+            minPrice = Math.min(minPrice, item[1]);
+        }
+        
+        int[] maxFree = new int[n + 1];
+        for (int f = 1; f <= n; f++) {
+            if (freq[f] == 0) continue;
+            int count = freq[f] - 1;
+            for (int mult = 2 * f; mult <= n; mult += f) {
+                count += freq[mult];
+            }
+            maxFree[f] = count;
+        }
+        
+        Arrays.sort(items, (a, b) -> Integer.compare(a[1], b[1]));
+        
+        long remBudget = budget;
+        long totalItems = 0;
+        long maxAns = remBudget / minPrice;
+        
+        for (int[] item : items) {
+            int f = item[0];
+            long p = item[1];
+            long limit = maxFree[f];
+            
+            if (limit == 0 || remBudget < p) continue;
+            
+            long canBuy = Math.min(limit, remBudget / p);
+            remBudget -= canBuy * p;
+            totalItems += canBuy * 2;
+            
+            maxAns = Math.max(maxAns, totalItems + remBudget / minPrice);
+        }
+        
+        return (int) maxAns;
+    }
+}
